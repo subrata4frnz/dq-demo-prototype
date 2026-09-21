@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intelligent Migration Platform — Prototype</title>
+<style>
+  :root{
+    --bg:#f3f4f8; --surface:#ffffff; --border:#e2e8f0; --border-soft:#eef1f6;
+    --text:#0f172a; --muted:#64748b; --muted-2:#94a3b8;
+    --primary:#4f46e5; --primary-dark:#4338ca; --primary-soft:#eef2ff;
+    --success:#16a34a; --success-soft:#ecfdf5; --warning:#d97706; --warning-soft:#fffbeb;
+    --danger:#dc2626; --danger-soft:#fef2f2; --info:#0ea5e9; --info-soft:#f0f9ff;
+    --radius:10px; --shadow:0 1px 2px rgba(15,23,42,.06), 0 1px 12px rgba(15,23,42,.04);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;}
+  a,button{font-family:inherit;cursor:pointer;}
+  button{font-size:13px;}
+  h1,h2,h3,h4{margin:0 0 4px 0;font-weight:600;}
+  .muted{color:var(--muted);}
+  .small{font-size:12px;}
+  .tiny{font-size:11px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex;align-items:center;gap:24px;padding:0 24px;height:56px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+  .brand{font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--primary-dark);white-space:nowrap;}
+  .topnav{display:flex;gap:4px;flex:1;}
+  .topnav a{padding:8px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500;font-size:13px;}
+  .topnav a:hover{background:var(--bg);color:var(--text);}
+  .topnav a.active{background:var(--primary-soft);color:var(--primary-dark);}
+  .userbox{display:flex;align-items:center;gap:10px;}
+  .userbox span{font-size:13px;color:var(--muted);}
+  .userbox button{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);}
+  .userbox button:hover{background:var(--bg);}
+
+  .page{max-width:1280px;margin:0 auto;padding:28px 24px 80px;}
+  .proto-banner{max-width:1280px;margin:0 auto;padding:8px 24px;background:var(--info-soft);color:#075985;font-size:12px;border-bottom:1px solid #bae6fd;text-align:center;}
+
+  /* ---------- Cards / generic ---------- */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;}
+  .card + .card{margin-top:16px;}
+  .row{display:flex;gap:16px;}
+  .col{flex:1;min-width:0;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px 14px;border-radius:8px;font-weight:500;transition:.12s;}
+  .btn:hover{background:var(--bg);}
+  .btn-primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-sm{padding:5px 10px;font-size:12px;border-radius:6px;}
+  .btn-danger{color:var(--danger);border-color:#fecaca;}
+  .btn-danger:hover{background:var(--danger-soft);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  input[type=text],input[type=email],input[type=password],textarea,select{
+    border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;color:var(--text);width:100%;font-family:inherit;
+  }
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--primary-soft);border-color:var(--primary);}
+  textarea{resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:9px 10px;border-bottom:1px solid var(--border-soft);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .badge-error{background:var(--danger-soft);color:var(--danger);}
+  .badge-warning{background:var(--warning-soft);color:var(--warning);}
+  .badge-success{background:var(--success-soft);color:var(--success);}
+  .badge-info{background:var(--info-soft);color:#0369a1;}
+  .badge-muted{background:var(--bg);color:var(--muted);}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;background:var(--bg);border:1px solid var(--border);margin:3px 4px 3px 0;}
+  .chip-added{background:var(--success-soft);border-color:#bbf7d0;color:#15803d;}
+  .chip-disabled{background:var(--danger-soft);border-color:#fecaca;color:var(--danger);text-decoration:line-through;}
+  .chip button{background:none;border:none;color:inherit;font-size:13px;line-height:1;padding:0 0 0 2px;opacity:.65;}
+  .chip button:hover{opacity:1;}
+
+  /* ---------- Login ---------- */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#eef2ff,#f3f4f8 55%);}
+  .login-card{width:380px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 40px rgba(79,70,229,.12);padding:32px;}
+  .login-card h1{font-size:18px;margin-bottom:2px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+  .login-error{color:var(--danger);font-size:12px;min-height:16px;margin-bottom:8px;}
+
+  /* ---------- Projects ---------- */
+  .proj-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:.12s;}
+  .proj-card:hover{border-color:var(--primary);box-shadow:0 2px 16px rgba(79,70,229,.12);}
+
+  /* ---------- Workspace layout ---------- */
+  .workspace{display:flex;gap:20px;align-items:flex-start;}
+  .sidebar{width:250px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .sidebar-head{padding:14px 16px;border-bottom:1px solid var(--border);}
+  .obj-item{padding:12px 16px;border-bottom:1px solid var(--border-soft);cursor:pointer;}
+  .obj-item:hover{background:var(--bg);}
+  .obj-item.active{background:var(--primary-soft);border-left:3px solid var(--primary);}
+  .obj-item .name{font-weight:600;font-size:13px;}
+  .obj-item .meta{display:flex;justify-content:space-between;align-items:center;margin-top:5px;}
+  .main{flex:1;min-width:0;}
+  .breadcrumb{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .breadcrumb a{color:var(--primary);cursor:pointer;text-decoration:none;}
+
+  .tabbar{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+  .tabbar button{background:none;border:none;padding:10px 14px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .tabbar button.active{color:var(--primary-dark);border-bottom-color:var(--primary);font-weight:600;}
+  .tabbar button:hover{color:var(--text);}
+
+  /* ---------- Gauge & dimension bars ---------- */
+  .gauge{width:112px;height:112px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .gauge-inner{width:86px;height:86px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .gauge-inner .score{font-size:22px;font-weight:700;}
+  .gauge-inner .grade{font-size:11px;color:var(--muted);}
+  .dim-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .dim-label{width:190px;font-size:12.5px;color:var(--text);flex-shrink:0;}
+  .dim-bar-track{flex:1;height:8px;border-radius:99px;background:var(--border-soft);overflow:hidden;}
+  .dim-bar-fill{height:100%;border-radius:99px;}
+  .dim-score{width:52px;text-align:right;font-size:12.5px;font-weight:600;flex-shrink:0;}
+
+  .banner{border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .banner-warning{background:var(--warning-soft);border:1px solid #fde68a;color:#92400e;}
+  .banner-info{background:var(--info-soft);border:1px solid #bae6fd;color:#075985;}
+
+  .issue-card{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;}
+  .issue-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:var(--surface);}
+  .issue-head:hover{background:var(--bg);}
+  .issue-head .msg{flex:1;font-size:13px;}
+  .issue-body{padding:14px;border-top:1px solid var(--border-soft);background:#fbfbfe;}
+  .chev{color:var(--muted-2);font-size:11px;}
+
+  .toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .toggle .track{position:absolute;inset:0;background:var(--border);border-radius:999px;transition:.15s;}
+  .toggle .track:before{content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.3);}
+  .toggle input:checked + .track{background:var(--success);}
+  .toggle input:checked + .track:before{transform:translateX(16px);}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.25);}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .stat-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .stat-tile .val{font-size:22px;font-weight:700;}
+  .stat-tile .lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  .empty{border:1px dashed var(--border);border-radius:8px;padding:26px;text-align:center;color:var(--muted);}
+  hr{border:none;border-top:1px solid var(--border-soft);margin:16px 0;}
+  .kv{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--border-soft);}
+  .kv:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="proto-banner">Prototype build — illustrative UI running on in-memory sample data for <strong>Acme Corp / S/4HANA Migration – Wave 1</strong>. Nothing here is sent to a server; refreshing the page resets the demo.</div>
+<div id="app"></div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   MOCK DATA MODEL
+   ========================================================================= */
+const DB = {
+  data: {
+    vendor_master: [
+      {LIFNR:"0000100001", NAME1:"Acme Supplies",       LAND1:"US", ZTERM:"NT30"},
+      {LIFNR:"100002",     NAME1:"Beta Traders",        LAND1:"US", ZTERM:"NT60"},
+      {LIFNR:"0000100003", NAME1:"Gamma Logistics",     LAND1:"DE", ZTERM:"ZZ99"},
+      {LIFNR:"0000100004", NAME1:"Delta Freight",       LAND1:"GARBAGE", ZTERM:"NT30"},
+      {LIFNR:"0000100005", NAME1:"Epsilon Parts",       LAND1:"US", ZTERM:"NT30"},
+      {LIFNR:"0000100006", NAME1:"",                    LAND1:"FR", ZTERM:"NT30"},
+      {LIFNR:"0000100007", NAME1:"Epsilon Parts Inc",   LAND1:"US", ZTERM:"NT30"},
+    ],
+    open_items_ap: [
+      {LIFNR:"0000100001", BELNR:"5000000001", DMBTR:"1250.00"},
+      {LIFNR:"100002",     BELNR:"5000000002", DMBTR:"3400.00"},
+      {LIFNR:"0000100003", BELNR:"5000000003", DMBTR:"980.50"},
+      {LIFNR:"0000199999", BELNR:"5000000004", DMBTR:"15200.00"},
+      {LIFNR:"0000100005", BELNR:"5000000005", DMBTR:"410.25"},
+    ],
+  },
+  fields: {
+    vendor_master: ["LIFNR","NAME1","LAND1","ZTERM"],
+    open_items_ap: ["LIFNR","BELNR","DMBTR"],
+  },
+  objectLabels: { vendor_master:"Vendor Master", open_items_ap:"AP Open Items" },
+  rules: {
+    LAND1: { standard:["US","DE","GB","FR","IT","ES","NL","CA","MX","IN"], added:new Set(), disabled:new Set() },
+    ZTERM: { standard:["NT30","NT60","NT90","ZI00"], added:new Set(), disabled:new Set() },
+  },
+  quarantine: { vendor_master:new Set(), open_items_ap:new Set() },
+  decisions: {},
+  correctionLog: { vendor_master:[], open_items_ap:[] },
+  snapshots: { vendor_master:[], open_items_ap:[] },
+  crossRules: [
+    {id:1, objectA:"open_items_ap", fieldA:"LIFNR", objectB:"vendor_master", fieldB:"LIFNR",
+     type:"must_exist_in", severity:"ERROR",
+     description:"Every open item's vendor must exist in Vendor Master", enabled:true},
+  ],
+};
+
+const DIM_WEIGHTS = { completeness:25, validity:25, uniqueness:20, consistency:15, referential_integrity:15 };
+const DIM_LABELS = { completeness:"Completeness", validity:"Validity", uniqueness:"Uniqueness", consistency:"Consistency", referential_integrity:"Referential Integrity" };
+
+let session = null;
+let route = { page:"login", objId:"vendor_master", tab:"upload", expandedIssue:null, profileOpen:false, profileRan:false };
+let uiState = { loadCycleLabel:"", addValueDraft:{}, bulkCsvText:"", crossRuleForm:{objectA:"open_items_ap",fieldA:"",objectB:"vendor_master",fieldB:"",type:"must_exist_in",severity:"ERROR",description:""} };
+let lastBulkResults = [];
+
+/* =========================================================================
+   HELPERS
+   ========================================================================= */
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function pct(good,total){ return total ? Math.round((good/total)*1000)/10 : 100; }
+function gradeOf(score){ return score>=90?"A":score>=80?"B":score>=70?"C":score>=60?"D":"F"; }
+function dimColor(score){ return score>=90?"var(--success)":score>=70?"var(--warning)":"var(--danger)"; }
+function mostCommon(arr){ const c={}; let best=null,bc=0; arr.forEach(v=>{c[v]=(c[v]||0)+1; if(c[v]>bc){bc=c[v]; best=v;}}); return best; }
+function downloadBlob(content,filename,type){
+  const blob = new Blob([content], {type});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(()=>el.classList.remove("show"), 2400);
+}
+function fmtDate(d){ const dt=new Date(d); return dt.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + " " + dt.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); }
+
+/* =========================================================================
+   RULES ENGINE (allowed values)
+   ========================================================================= */
+function isValid(field, value){
+  const r = DB.rules[field];
+  if(!r) return true;
+  if(r.disabled.has(value)) return false;
+  if(r.standard.includes(value)) return true;
+  if(r.added.has(value)) return true;
+  return false;
+}
+function effectiveList(field){
+  const r = DB.rules[field];
+  const std = r.standard.map(v=>({value:v, disabled:r.disabled.has(v)}));
+  const added = [...r.added].map(v=>({value:v}));
+  return {std, added};
+}
+
+/* =========================================================================
+   ISSUE DETECTION (mirrors profiling / validation / cross-object checks)
+   ========================================================================= */
+function mkIssue(rows,type,severity,field,value,dimension,message){
+  return { id:`${type}-${field}-${rows.join("_")}`, rows, type, severity, field, value, dimension, message };
+}
+
+function getIssues(objId){
+  const rows = DB.data[objId];
+  const q = DB.quarantine[objId];
+  const out = [];
+
+  if(objId === "vendor_master"){
+    rows.forEach((r,i)=>{
+      if(!isValid("LAND1", r.LAND1)) out.push(mkIssue([i],"INVALID_VALUE","ERROR","LAND1",r.LAND1,"validity",
+        `LAND1 value "${esc(r.LAND1)}" is not in the allowed country list for this client.`));
+      if(!isValid("ZTERM", r.ZTERM)) out.push(mkIssue([i],"INVALID_VALUE","ERROR","ZTERM",r.ZTERM,"validity",
+        `ZTERM value "${esc(r.ZTERM)}" is not in the allowed payment-terms list.`));
+      if(!r.NAME1 || !r.NAME1.trim()) out.push(mkIssue([i],"MISSING","ERROR","NAME1",null,"completeness",
+        "NAME1 (vendor name) is required and missing."));
+    });
+    const numericLens = rows.map(r => /^\d+$/.test(r.LIFNR) ? r.LIFNR.length : null).filter(v=>v!==null);
+    const modeLen = mostCommon(numericLens);
+    rows.forEach((r,i)=>{
+      if(/^\d+$/.test(r.LIFNR) && r.LIFNR.length !== modeLen){
+        out.push(mkIssue([i],"LEADING_ZERO_LOSS","WARNING","LIFNR",r.LIFNR,"validity",
+          `LIFNR "${esc(r.LIFNR)}" has ${r.LIFNR.length} digits while most vendor numbers have ${modeLen} — looks like leading zeros were lost (classic Excel round-trip corruption of a zero-padded SAP key).`));
+      }
+    });
+    for(let i=0;i<rows.length;i++){
+      for(let j=i+1;j<rows.length;j++){
+        const a=(rows[i].NAME1||"").trim().toLowerCase(), b=(rows[j].NAME1||"").trim().toLowerCase();
+        if(a && b && a!==b && (a.startsWith(b)||b.startsWith(a)) && Math.min(a.length,b.length)>=5){
+          out.push(mkIssue([i,j],"DUPLICATE","WARNING","NAME1",null,"uniqueness",
+            `"${esc(rows[i].NAME1)}" (row ${i+1}) and "${esc(rows[j].NAME1)}" (row ${j+1}) look like the same vendor (fuzzy match) — possible duplicate master record.`));
+        }
+      }
+    }
+  }
+
+  if(objId === "open_items_ap"){
+    const rule = DB.crossRules.find(r => r.objectA==="open_items_ap" && r.fieldA==="LIFNR" && r.objectB==="vendor_master" && r.enabled);
+    if(rule){
+      const vendorIds = new Set(DB.data.vendor_master.map(v=>v.LIFNR));
+      rows.forEach((r,i)=>{
+        if(!vendorIds.has(r.LIFNR)) out.push(mkIssue([i],"REFERENTIAL_INTEGRITY","ERROR","LIFNR",r.LIFNR,"referential_integrity",
+          `LIFNR "${esc(r.LIFNR)}" does not exist in Vendor Master — this open item cannot be migrated without a valid vendor.`));
+      });
+    }
+  }
+
+  out.forEach(is => { is.excluded = is.rows.every(r => q.has(r)); });
+  out.sort((a,b)=> (a.severity===b.severity?0:(a.severity==="ERROR"?-1:1)));
+  return out;
+}
+
+function computeDQ(objId){
+  const rows = DB.data[objId];
+  const q = DB.quarantine[objId];
+  const scopeIdx = rows.map((_,i)=>i).filter(i => !q.has(i));
+  const total = scopeIdx.length || 1;
+  const issues = getIssues(objId);
+  const active = issues.filter(is => !is.excluded);
+
+  function badCount(dim){
+    const set = new Set();
+    active.filter(is => is.dimension===dim).forEach(is => is.rows.forEach(r => { if(scopeIdx.includes(r)) set.add(r); }));
+    return set.size;
+  }
+  const dims = {
+    completeness: pct(total - badCount("completeness"), total),
+    validity: pct(total - badCount("validity"), total),
+    uniqueness: pct(total - badCount("uniqueness"), total),
+    consistency: 100,
+    referential_integrity: pct(total - badCount("referential_integrity"), total),
+  };
+  const overall = Math.round(Object.keys(DIM_WEIGHTS).reduce((s,k)=> s + dims[k]*DIM_WEIGHTS[k], 0) / 100 * 10) / 10;
+
+  const referencedBy = DB.crossRules.filter(r=>r.objectB===objId && r.enabled).length;
+  const checksAgainst = DB.crossRules.filter(r=>r.objectA===objId && r.enabled).length;
+
+  return { overall, grade: gradeOf(overall), dims, issues, active, scopeIdx, total: rows.length,
+           excludedCount: rows.length - scopeIdx.length, referencedBy, checksAgainst };
+}
+
+function ensureSnapshot(objId){
+  if(DB.snapshots[objId].length === 0){
+    const dq = computeDQ(objId);
+    DB.snapshots[objId].push({ label:"Initial Load", score:dq.overall, at:new Date() });
+  }
+}
+
+/* =========================================================================
+   ACTIONS
+   ========================================================================= */
+function login(){
+  const e = document.getElementById("loginEmail").value.trim();
+  const p = document.getElementById("loginPassword").value;
+  if(e === "admin@acme.com" && p === "demopass1"){
+    session = { name:"Jordan Admin", email:e };
+    route = { page:"projects" };
+    render();
+  } else {
+    document.getElementById("loginError").textContent = "Invalid email or password. Try the demo credentials below.";
+  }
+}
+function fillDemo(){
+  document.getElementById("loginEmail").value = "admin@acme.com";
+  document.getElementById("loginPassword").value = "demopass1";
+}
+function logout(){ session=null; route={page:"login"}; render(); }
+
+function goProjects(){ route = {page:"projects"}; render(); }
+function openProject(){ route = {page:"workspace", objId:"vendor_master", tab:"upload", expandedIssue:null, profileOpen:false, profileRan:false}; render(); }
+function selectObject(objId){ route.objId=objId; route.tab="upload"; route.expandedIssue=null; route.profileOpen=false; route.profileRan=false; render(); }
+function setTab(tab){ route.tab=tab; if(tab==="dq") ensureSnapshot(route.objId); render(); }
+function goRules(){ route = {page:"rules"}; render(); }
+function goCrossRules(){ route = {page:"crossrules"}; render(); }
+
+function toggleProfile(){ route.profileOpen = !route.profileOpen; render(); }
+function runProfile(){ route.profileRan = true; render(); }
+
+function toggleIssue(id){ route.expandedIssue = (route.expandedIssue===id) ? null : id; render(); }
+
+function allowValue(field, value){
+  DB.rules[field].added.add(value);
+  DB.rules[field].disabled.delete(value);
+  toast(`"${value}" added to allowed values for ${field}.`);
+  render();
+}
+function excludeIssueRows(objId, issueId){
+  const issue = getIssues(objId).find(i=>i.id===issueId);
+  if(!issue) return;
+  issue.rows.forEach(r => DB.quarantine[objId].add(r));
+  toast(`${issue.rows.length} record(s) excluded from migration scope.`);
+  render();
+}
+function undoExcludeIssue(objId, issueId){
+  const issue = getIssues(objId).find(i=>i.id===issueId);
+  if(!issue) return;
+  issue.rows.forEach(r => DB.quarantine[objId].delete(r));
+  toast("Exclusion undone.");
+  render();
+}
+function undoExcludeRow(objId, rowIdx){
+  DB.quarantine[objId].delete(rowIdx);
+  toast(`Row ${rowIdx+1} restored to migration scope.`);
+  render();
+}
+
+function rerunCheck(objId){
+  const dq = computeDQ(objId);
+  const label = uiState.loadCycleLabel.trim() || `Re-check ${DB.snapshots[objId].length + 1}`;
+  DB.snapshots[objId].push({ label, score: dq.overall, at: new Date() });
+  uiState.loadCycleLabel = "";
+  toast("Data quality re-computed and saved to trend history.");
+  render();
+}
+
+function setDecision(objId, field, issueType, value){
+  DB.decisions[`${objId}|${field}|${issueType}`] = value;
+  render();
+}
+
+function applyCorrection(objId, rowIdx, field){
+  const input = document.getElementById(`corr-${rowIdx}-${field}`);
+  if(!input) return;
+  const val = input.value.trim();
+  const old = DB.data[objId][rowIdx][field];
+  DB.data[objId][rowIdx][field] = val;
+  DB.correctionLog[objId].unshift({ ts:new Date(), field, row: rowIdx+1, old: old || "(empty)", neu: val || "(empty)", user: session.name });
+  toast(`Correction applied to row ${rowIdx+1} / ${field}.`);
+  render();
+}
+
+function addRuleValue(field){
+  const input = document.getElementById(`addval-${field}`);
+  const v = input.value.trim();
+  if(!v) return;
+  DB.rules[field].added.add(v);
+  DB.rules[field].disabled.delete(v);
+  uiState.addValueDraft[field] = "";
+  toast(`"${v}" added as an allowed value for ${field}.`);
+  render();
+}
+function disableStandardValue(field, value){
+  DB.rules[field].disabled.add(value);
+  toast(`"${value}" disabled for ${field}.`);
+  render();
+}
+function enableStandardValue(field, value){
+  DB.rules[field].disabled.delete(value);
+  render();
+}
+function removeOverrideValue(field, value){
+  DB.rules[field].added.delete(value);
+  render();
+}
+
+function downloadTemplate(){
+  const csv = "field,value,action\nLAND1,CH,add\nZTERM,NT45,add\nLAND1,GARBAGE,disable\n";
+  downloadBlob(csv, "allowed_values_bulk_template.csv", "text/csv");
+  toast("Template downloaded.");
+}
+function handleBulkFile(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { uiState.bulkCsvText = reader.result; render(); };
+  reader.readAsText(file);
+}
+function processBulkUpload(){
+  const text = uiState.bulkCsvText.trim();
+  if(!text){ toast("Paste or upload CSV data first."); return; }
+  const lines = text.split(/\r?\n/).filter(l=>l.trim());
+  let start = 0;
+  if(lines[0].toLowerCase().replace(/\s/g,"").startsWith("field,value")) start = 1;
+  const results = [];
+  for(let i=start;i<lines.length;i++){
+    const parts = lines[i].split(",").map(s=>s.trim());
+    const [field,value,action] = parts;
+    if(!field || !value || !DB.rules[field]){
+      results.push({field:field||"?", value:value||"?", action:action||"add", status:"Skipped — unknown field"});
+      continue;
+    }
+    const r = DB.rules[field];
+    const act = (action || "add").toLowerCase();
+    if(act === "disable"){
+      r.disabled.add(value); r.added.delete(value);
+      results.push({field, value, action:"disable", status:"Applied"});
+    } else {
+      if(r.standard.includes(value) && !r.disabled.has(value)){
+        results.push({field, value, action:"add", status:"Skipped — already allowed"});
+      } else {
+        r.added.add(value); r.disabled.delete(value);
+        results.push({field, value, action:"add", status:"Applied"});
+      }
+    }
+  }
+  lastBulkResults = results;
+  uiState.bulkCsvText = "";
+  toast(`Bulk upload processed — ${results.filter(r=>r.status==="Applied").length} applied, ${results.filter(r=>r.status!=="Applied").length} skipped.`);
+  render();
+}
+
+function toggleCrossRule(id){
+  const r = DB.crossRules.find(x=>x.id===id);
+  if(r){ r.enabled = !r.enabled; toast(`Rule ${r.enabled?"enabled":"disabled"}.`); render(); }
+}
+function addCrossRule(){
+  const f = uiState.crossRuleForm;
+  if(!f.fieldA.trim() || !f.fieldB.trim() || !f.description.trim()){
+    toast("Fill in both fields and a description first.");
+    return;
+  }
+  DB.crossRules.push({ id: DB.crossRules.length ? Math.max(...DB.crossRules.map(r=>r.id))+1 : 1,
+    objectA:f.objectA, fieldA:f.fieldA.trim(), objectB:f.objectB, fieldB:f.fieldB.trim(),
+    type:f.type, severity:f.severity, description:f.description.trim(), enabled:true });
+  uiState.crossRuleForm = {objectA:"open_items_ap",fieldA:"",objectB:"vendor_master",fieldB:"",type:"must_exist_in",severity:"ERROR",description:""};
+  toast("Cross-object rule added.");
+  render();
+}
+
+function generateFile(objId){
+  const dq = computeDQ(objId);
+  const fields = DB.fields[objId];
+  const rows = DB.data[objId].filter((_,i)=>dq.scopeIdx.includes(i));
+  const csv = [fields.join(","), ...rows.map(r=>fields.map(f=>`"${String(r[f]??"").replace(/"/g,'""')}"`).join(","))].join("\n");
+  downloadBlob(csv, `${objId}_load_file.csv`, "text/csv");
+  toast(`Generated SAP load file — ${rows.length} record(s), ${dq.excludedCount} excluded.`);
+}
+function downloadAudit(objId){
+  const dq = computeDQ(objId);
+  const lines = [];
+  lines.push(`AUDIT PACKAGE — ${DB.objectLabels[objId]} (${objId})`);
+  lines.push(`Generated: ${new Date().toString()}`);
+  lines.push(`Project: S/4HANA Migration – Wave 1 (Acme Corp)`);
+  lines.push("");
+  lines.push(`Overall Data Quality Score: ${dq.overall.toFixed(1)} (Grade ${dq.grade})`);
+  Object.keys(DIM_WEIGHTS).forEach(k => lines.push(`  ${DIM_LABELS[k]} (${DIM_WEIGHTS[k]}%): ${dq.dims[k].toFixed(1)}`));
+  lines.push("");
+  lines.push(`Total records: ${dq.total} | In migration scope: ${dq.scopeIdx.length} | Excluded: ${dq.excludedCount}`);
+  lines.push("");
+  lines.push("FINDINGS:");
+  dq.issues.forEach(is => lines.push(`  [${is.severity}] ${is.type} — ${is.field} — rows ${is.rows.map(r=>r+1).join(",")} ${is.excluded?"(EXCLUDED FROM SCOPE)":""}\n    ${is.message}`));
+  lines.push("");
+  lines.push("CORRECTION LOG:");
+  (DB.correctionLog[objId]||[]).forEach(c => lines.push(`  ${fmtDate(c.ts)} — row ${c.row} / ${c.field}: "${c.old}" -> "${c.neu}" (${c.user})`));
+  downloadBlob(lines.join("\n"), `${objId}_audit_package.txt`, "text/plain");
+  toast("Audit package downloaded.");
+}
+
+/* =========================================================================
+   VIEWS
+   ========================================================================= */
+function topNav(){
+  return `
+  <div class="topbar">
+    <div class="brand" onclick="goProjects()">&#9881; Intelligent Migration Platform</div>
+    <div class="topnav">
+      <a class="${route.page==='projects'||route.page==='workspace'?'active':''}" onclick="goProjects()">Projects</a>
+      <a class="${route.page==='rules'?'active':''}" onclick="goRules()">Allowed Values</a>
+      <a class="${route.page==='crossrules'?'active':''}" onclick="goCrossRules()">Cross-Object Rules</a>
+    </div>
+    <div class="userbox"><span>${esc(session.name)}</span><button onclick="logout()">Sign out</button></div>
+  </div>`;
+}
+
+function viewLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <h1>Intelligent Migration Platform</h1>
+      <p class="muted small" style="margin-bottom:20px;">Sign in to continue to your workspace.</p>
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@company.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"></div>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn btn-primary" style="width:100%;padding:10px;" onclick="login()">Sign in</button>
+      <div style="text-align:center;margin-top:14px;">
+        <a class="small" style="color:var(--primary);cursor:pointer;" onclick="fillDemo()">Use demo credentials (admin@acme.com / demopass1)</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewProjects(){
+  const vmDq = computeDQ("vendor_master"), oiDq = computeDQ("open_items_ap");
+  const avg = Math.round((vmDq.overall + oiDq.overall)/2 * 10)/10;
+  return `
+  <div class="page">
+    <h2>Projects</h2>
+    <p class="muted" style="margin-bottom:20px;">Migration projects for Acme Corp.</p>
+    <div class="proj-card" onclick="openProject()">
+      <div>
+        <h3>S/4HANA Migration – Wave 1</h3>
+        <p class="muted small" style="margin-top:4px;">2 SAP objects &middot; Created by Jordan Admin &middot; Client: Acme Corp</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:24px;">
+        <div style="text-align:right;">
+          <div style="font-size:20px;font-weight:700;color:${dimColor(avg)}">${avg.toFixed(1)}</div>
+          <div class="tiny muted">Avg. DQ score</div>
+        </div>
+        <button class="btn btn-primary">Open &rarr;</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function objSidebar(){
+  const items = Object.keys(DB.data).map(objId=>{
+    const dq = computeDQ(objId);
+    const active = objId===route.objId ? "active" : "";
+    return `
+    <div class="obj-item ${active}" onclick="selectObject('${objId}')">
+      <div class="name">${esc(DB.objectLabels[objId])}</div>
+      <div class="meta">
+        <span class="tiny muted">${DB.data[objId].length} rows</span>
+        <span class="badge" style="background:${dimColor(dq.overall)}22;color:${dimColor(dq.overall)};">${dq.grade} &middot; ${dq.overall.toFixed(1)}</span>
+      </div>
+    </div>`;
+  }).join("");
+  return `
+  <div class="sidebar">
+    <div class="sidebar-head"><strong class="small">SAP Objects</strong></div>
+    ${items}
+  </div>`;
+}
+
+function viewWorkspace(){
+  const objId = route.objId;
+  const tabs = [["upload","Upload &amp; Map"],["dq","Data Quality"],["corrections","Corrections"],["generate","Generate &amp; Audit"]];
+  const tabBar = tabs.map(([id,label]) => `<button class="${route.tab===id?'active':''}" onclick="setTab('${id}')">${label}</button>`).join("");
+  let content = "";
+  if(route.tab==="upload") content = tabUpload(objId);
+  else if(route.tab==="dq") content = tabDQ(objId);
+  else if(route.tab==="corrections") content = tabCorrections(objId);
+  else if(route.tab==="generate") content = tabGenerate(objId);
+
+  return `
+  <div class="page">
+    <div class="breadcrumb"><a onclick="goProjects()">Projects</a> / S/4HANA Migration – Wave 1 / ${esc(DB.objectLabels[objId])}</div>
+    <div class="workspace">
+      ${objSidebar()}
+      <div class="main">
+        <h2>${esc(DB.objectLabels[objId])} <span class="muted small">(${objId})</span></h2>
+        <div class="tabbar" style="margin-top:14px;">${tabBar}</div>
+        ${content}
+      </div>
+    </div>
+  </div>`;
+}
+
+function tabUpload(objId){
+  const fields = DB.fields[objId];
+  const mapRows = fields.map(f => `
+    <tr><td><code>${f}</code></td><td>${f}</td><td><span class="badge badge-success">Mapped</span></td></tr>`).join("");
+
+  let profileBlock;
+  if(!route.profileOpen){
+    profileBlock = `<button class="btn" onclick="toggleProfile()">Detailed field profile &#9660;</button>`;
+  } else if(!route.profileRan){
+    profileBlock = `
+      <div>
+        <button class="btn" onclick="toggleProfile()" style="margin-bottom:12px;">Detailed field profile &#9650;</button>
+        <div class="empty">
+          <p style="margin-bottom:12px;">No profile has been run yet for this object.</p>
+          <button class="btn btn-primary" onclick="runProfile()">Run profile</button>
+        </div>
+      </div>`;
+  } else {
+    profileBlock = `
+      <div>
+        <button class="btn" onclick="toggleProfile()" style="margin-bottom:12px;">Detailed field profile &#9650;</button>
+        ${profileTable(objId)}
+      </div>`;
+  }
+
+  return `
+  <div class="card">
+    <h3>Field Mapping</h3>
+    <p class="muted small" style="margin-bottom:12px;">Source columns automatically mapped to SAP target fields.</p>
+    <table>
+      <thead><tr><th>Source Column</th><th>SAP Field</th><th>Status</th></tr></thead>
+      <tbody>${mapRows}</tbody>
+    </table>
+  </div>
+  <div class="card">
+    ${profileBlock}
+  </div>`;
+}
+
+function profileTable(objId){
+  const rows = DB.data[objId];
+  const fields = DB.fields[objId];
+  const issues = getIssues(objId);
+  const optionLabels = {"":"— Select —", accept:"Accept As-Is", fix:"Fix Before Load", defer:"Defer to Post-Load"};
+
+  const trs = fields.map(f=>{
+    const values = rows.map(r=>r[f]);
+    const nonNull = values.filter(v=>v!==null && v!==undefined && String(v).trim()!=="");
+    const nullPct = Math.round(100*(values.length-nonNull.length)/values.length);
+    const distinct = new Set(nonNull.map(String)).size;
+    const allInt = nonNull.length>0 && nonNull.every(v=>/^\d+$/.test(v));
+    const allDec = nonNull.length>0 && nonNull.every(v=>/^-?\d+(\.\d+)?$/.test(v));
+    const type = allInt ? "INTEGER" : (allDec ? "DECIMAL" : "TEXT");
+    const sample = nonNull.slice(0,3).map(esc).join(", ");
+    const fieldIssueTypes = [...new Set(issues.filter(is=>is.field===f && !is.excluded).map(is=>is.type))];
+    const chips = fieldIssueTypes.length
+      ? fieldIssueTypes.map(t=>`<span class="badge badge-warning" style="margin:1px 3px 1px 0;">${t}</span>`).join("")
+      : `<span class="badge badge-success">Clean</span>`;
+    // one decision select per (field, primary issue type) — use first issue type or "GENERAL"
+    const issueType = fieldIssueTypes[0] || "GENERAL";
+    const key = `${objId}|${f}|${issueType}`;
+    const current = DB.decisions[key] || "";
+    const opts = Object.keys(optionLabels).map(v=>`<option value="${v}" ${v===current?"selected":""}>${optionLabels[v]}</option>`).join("");
+    return `
+      <tr>
+        <td><code>${f}</code></td>
+        <td>${type}</td>
+        <td>${distinct}</td>
+        <td>${nullPct}%</td>
+        <td class="small muted">${sample || "&mdash;"}</td>
+        <td>${chips}</td>
+        <td><select onchange="setDecision('${objId}','${f}','${issueType}', this.value)">${opts}</select></td>
+      </tr>`;
+  }).join("");
+
+  return `
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Distinct</th><th>Null %</th><th>Sample values</th><th>Detected issues</th><th>Decision</th></tr></thead>
+      <tbody>${trs}</tbody>
+    </table>
+    <p class="tiny muted" style="margin-top:10px;">Decisions are saved to the review log and persist across profile re-runs within this session.</p>
+  `;
+}
+
+function trendChart(objId){
+  const snaps = DB.snapshots[objId];
+  if(snaps.length < 2) return "";
+  const w=560,h=140,pad=30;
+  const min = Math.min(...snaps.map(s=>s.score), 60), max = 100;
+  const stepX = (w - pad*2) / (snaps.length - 1);
+  const pts = snaps.map((s,i)=>{
+    const x = pad + i*stepX;
+    const y = h - pad - ((s.score-min)/(max-min || 1)) * (h - pad*2);
+    return {x,y,...s};
+  });
+  const path = pts.map((p,i)=> (i===0?"M":"L") + p.x.toFixed(1) + " " + p.y.toFixed(1)).join(" ");
+  const dots = pts.map(p=>`
+     <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="#4f46e5">
+       <title>${esc(p.label)} — ${p.score.toFixed(1)} (${fmtDate(p.at)})</title>
+     </circle>
+     <text x="${p.x.toFixed(1)}" y="${h-8}" font-size="9" fill="#64748b" text-anchor="middle">${esc(p.label.length>10?p.label.slice(0,9)+'…':p.label)}</text>`).join("");
+  return `
+  <div class="card">
+    <h3>Score trend</h3>
+    <p class="muted small" style="margin-bottom:8px;">Every fresh check is saved as a snapshot so you can see improvement across mock-load cycles.</p>
+    <svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMinYMid meet">
+      <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#e2e8f0"/>
+      <path d="${path}" fill="none" stroke="#4f46e5" stroke-width="2.5"/>
+      ${dots}
+    </svg>
+  </div>`;
+}
+
+function tabDQ(objId){
+  const dq = computeDQ(objId);
+  const gaugeColor = dimColor(dq.overall);
+
+  const dimRows = Object.keys(DIM_WEIGHTS).map(k=>{
+    const score = dq.dims[k];
+    return `
+    <div class="dim-row">
+      <div class="dim-label">${DIM_LABELS[k]} <span class="tiny muted">(${DIM_WEIGHTS[k]}%)</span></div>
+      <div class="dim-bar-track"><div class="dim-bar-fill" style="width:${score}%;background:${dimColor(score)};"></div></div>
+      <div class="dim-score" style="color:${dimColor(score)}">${score.toFixed(1)}</div>
+    </div>`;
+  }).join("");
+
+  const banner = dq.excludedCount > 0 ? `
+    <div class="banner banner-warning">
+      <span>&#9888; ${dq.excludedCount} record(s) excluded from migration scope. They will not appear in the generated load file.</span>
+      <a class="small" style="color:#92400e;cursor:pointer;text-decoration:underline;" onclick="setTab('generate')">Review in Generate &amp; Audit</a>
+    </div>` : "";
+
+  const refNote = `
+    <div class="banner banner-info">
+      <span>Referential integrity: this object is referenced by ${dq.referencedBy} other object rule(s), and checks ${dq.checksAgainst} rule(s) against other objects.</span>
+    </div>`;
+
+  const issuesHtml = dq.issues.length ? dq.issues.map(is => issueCard(objId, is)).join("") : `<div class="empty">No data quality findings for this object.</div>`;
+
+  return `
+  <div class="card">
+    <div class="row" style="align-items:center;">
+      <div class="gauge" style="background:conic-gradient(${gaugeColor} ${dq.overall*3.6}deg, #e2e8f0 0deg);">
+        <div class="gauge-inner"><div class="score">${dq.overall.toFixed(1)}</div><div class="grade">Grade ${dq.grade}</div></div>
+      </div>
+      <div class="col" style="margin-left:8px;">
+        ${dimRows}
+      </div>
+    </div>
+    <hr>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input type="text" placeholder="Load cycle label (optional)" style="max-width:240px;" value="${esc(uiState.loadCycleLabel)}" oninput="uiState.loadCycleLabel=this.value">
+      <button class="btn btn-primary" onclick="rerunCheck('${objId}')">Re-run check</button>
+      <span class="tiny muted">Last checked: ${DB.snapshots[objId].length ? fmtDate(DB.snapshots[objId][DB.snapshots[objId].length-1].at) : "just now"}</span>
+    </div>
+  </div>
+  ${banner}
+  ${refNote}
+  ${trendChart(objId)}
+  <div class="card">
+    <h3>Top Issues</h3>
+    <p class="muted small" style="margin-bottom:12px;">Findings are grouped from field validation, cross-object checks, and fuzzy duplicate detection.</p>
+    ${issuesHtml}
+  </div>`;
+}
+
+function issueCard(objId, is){
+  const expanded = route.expandedIssue === is.id;
+  const sevBadge = is.severity==="ERROR" ? "badge-error" : "badge-warning";
+  const rows = DB.data[objId];
+  let body = "";
+  if(expanded){
+    const sampleRows = is.rows.map(r => `<tr><td>${r+1}</td>${DB.fields[objId].map(f=>`<td>${esc(rows[r][f]) || "<span class=\"muted\">&mdash;</span>"}</td>`).join("")}</tr>`).join("");
+    let actions = "";
+    if(is.excluded){
+      actions = `<span class="badge badge-success">&#10003; Excluded from migration scope</span>
+        <button class="btn btn-sm" style="margin-left:8px;" onclick="undoExcludeIssue('${objId}','${is.id}')">Undo</button>`;
+    } else {
+      if(is.type === "INVALID_VALUE"){
+        actions += `<button class="btn btn-sm btn-primary" style="margin-right:8px;" onclick="allowValue('${is.field}','${esc(is.value)}')">Allow "${esc(is.value)}" going forward</button>`;
+      }
+      actions += `<button class="btn btn-sm btn-danger" onclick="excludeIssueRows('${objId}','${is.id}')">Exclude ${is.rows.length} record(s) from migration scope</button>`;
+    }
+    body = `
+      <div class="issue-body">
+        <table>
+          <thead><tr><th>Row</th>${DB.fields[objId].map(f=>`<th>${f}</th>`).join("")}</tr></thead>
+          <tbody>${sampleRows}</tbody>
+        </table>
+        <div style="margin-top:12px;">${actions}</div>
+      </div>`;
+  }
+  return `
+  <div class="issue-card">
+    <div class="issue-head" onclick="toggleIssue('${is.id}')">
+      <span class="badge ${sevBadge}">${is.severity}</span>
+      <span class="badge badge-muted">${is.type}</span>
+      <span class="msg">${is.message} ${is.excluded ? '<span class="badge badge-success" style="margin-left:6px;">Excluded</span>' : ''}</span>
+      <span class="chev">${expanded ? "&#9650;" : "&#9660;"}</span>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function tabCorrections(objId){
+  if(objId !== "vendor_master"){
+    return `<div class="card"><div class="empty">No row-level corrections needed here. Referential integrity issues for AP Open Items are resolved via Vendor Master data or by adjusting the Cross-Object Rule.</div></div>`;
+  }
+  const issues = getIssues(objId).filter(is => !is.excluded && ["INVALID_VALUE","MISSING","LEADING_ZERO_LOSS"].includes(is.type));
+  const rows = DB.data[objId];
+  const items = issues.length ? issues.map(is=>{
+    const r = is.rows[0];
+    const current = rows[r][is.field] ?? "";
+    return `
+    <div class="card" style="padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span class="badge ${is.severity==='ERROR'?'badge-error':'badge-warning'}">${is.severity}</span>
+          <span class="badge badge-muted">${is.type}</span>
+          <span class="small" style="margin-left:6px;">Row ${r+1} &middot; ${is.field}</span>
+        </div>
+      </div>
+      <p class="small muted" style="margin:8px 0;">${is.message}</p>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="corr-${r}-${is.field}" value="${esc(current)}" placeholder="New value">
+        <button class="btn btn-primary btn-sm" onclick="applyCorrection('${objId}',${r},'${is.field}')">Apply Correction</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty">No open correction items — all field-level findings resolved or excluded.</div>`;
+
+  const log = DB.correctionLog[objId];
+  const logRows = log.length ? log.map(c=>`
+    <tr><td class="tiny muted">${fmtDate(c.ts)}</td><td>Row ${c.row}</td><td>${c.field}</td><td>${esc(c.old)}</td><td>${esc(c.neu)}</td><td>${esc(c.user)}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="muted small">No corrections applied yet.</td></tr>`;
+
+  return `
+    <h3 style="margin-bottom:12px;">Correction Workbench</h3>
+    ${items}
+    <div class="card">
+      <h3>Correction Log</h3>
+      <table>
+        <thead><tr><th>When</th><th>Row</th><th>Field</th><th>Old Value</th><th>New Value</th><th>By</th></tr></thead>
+        <tbody>${logRows}</tbody>
+      </table>
+    </div>`;
+}
+
+function tabGenerate(objId){
+  const dq = computeDQ(objId);
+  const excludedRows = [...DB.quarantine[objId]].sort((a,b)=>a-b);
+  const excludedList = excludedRows.length ? excludedRows.map(r=>`
+    <div class="kv"><span>Row ${r+1} — ${esc(DB.data[objId][r][DB.fields[objId][0]])}</span>
+      <a class="small" style="color:var(--primary);cursor:pointer;" onclick="undoExcludeRow('${objId}',${r})">Restore</a></div>`).join("")
+    : `<p class="muted small">No records currently excluded.</p>`;
+
+  return `
+    <div class="grid-4" style="margin-bottom:16px;">
+      <div class="stat-tile"><div class="val">${dq.total}</div><div class="lbl">Total records</div></div>
+      <div class="stat-tile"><div class="val">${dq.scopeIdx.length}</div><div class="lbl">In migration scope</div></div>
+      <div class="stat-tile"><div class="val">${dq.excludedCount}</div><div class="lbl">Excluded</div></div>
+      <div class="stat-tile"><div class="val" style="color:${dimColor(dq.overall)}">${dq.overall.toFixed(1)} (${dq.grade})</div><div class="lbl">Data quality score</div></div>
+    </div>
+    <div class="card">
+      <h3>Generate SAP Load File</h3>
+      <p class="muted small" style="margin-bottom:12px;">Produces a load-ready CSV for ${DB.objectLabels[objId]}, automatically excluding quarantined records.</p>
+      <button class="btn btn-primary" onclick="generateFile('${objId}')">Generate SAP Load File</button>
+      <button class="btn" style="margin-left:8px;" onclick="downloadAudit('${objId}')">Download Audit Package</button>
+    </div>
+    <div class="card">
+      <h3>Excluded Records</h3>
+      ${excludedList}
+    </div>`;
+}
+
+function viewRules(){
+  const fields = Object.keys(DB.rules);
+  const fieldCards = fields.map(field=>{
+    const {std, added} = effectiveList(field);
+    const chips = std.map(s => s.disabled
+      ? `<span class="chip chip-disabled">${esc(s.value)}<button onclick="enableStandardValue('${field}','${esc(s.value)}')" title="Re-enable">&#8635;</button></span>`
+      : `<span class="chip">${esc(s.value)}<button onclick="disableStandardValue('${field}','${esc(s.value)}')" title="Disable">&times;</button></span>`
+    ).join("") + added.map(a => `<span class="chip chip-added">${esc(a.value)} <span class="tiny">(added)</span><button onclick="removeOverrideValue('${field}','${esc(a.value)}')" title="Remove">&times;</button></span>`).join("");
+
+    return `
+    <div class="card">
+      <h3>${field}</h3>
+      <p class="muted small" style="margin-bottom:10px;">Client-configured overrides supplement the built-in SAP reference list — nothing is replaced.</p>
+      <div>${chips}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;max-width:340px;">
+        <input type="text" id="addval-${field}" placeholder="Add allowed value..." value="${esc(uiState.addValueDraft[field]||'')}" oninput="uiState.addValueDraft['${field}']=this.value" onkeydown="if(event.key==='Enter')addRuleValue('${field}')">
+        <button class="btn btn-sm btn-primary" onclick="addRuleValue('${field}')">Add</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  const bulkResultsTable = lastBulkResults.length ? `
+    <div id="bulkResults" style="margin-top:14px;">
+      <table>
+        <thead><tr><th>Field</th><th>Value</th><th>Action</th><th>Status</th></tr></thead>
+        <tbody>${lastBulkResults.map(r=>`<tr><td>${esc(r.field)}</td><td>${esc(r.value)}</td><td>${esc(r.action)}</td>
+          <td><span class="badge ${r.status==='Applied'?'badge-success':'badge-muted'}">${r.status}</span></td></tr>`).join("")}</tbody>
+      </table>
+    </div>` : "";
+
+  return `
+  <div class="page">
+    <h2>Allowed Values</h2>
+    <p class="muted" style="margin-bottom:20px;">Manage per-field allowed value lists used by validation and profiling across all SAP objects.</p>
+    ${fieldCards}
+    <div class="card">
+      <h3>Bulk Upload Allowed Values</h3>
+      <p class="muted small" style="margin-bottom:12px;">Upload a CSV with columns <code>field,value,action</code> (action is <code>add</code> or <code>disable</code>) to update many values at once.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-sm" onclick="downloadTemplate()">Download CSV Template</button>
+        <label class="btn btn-sm" style="display:inline-flex;align-items:center;">
+          Choose File<input type="file" accept=".csv" style="display:none;" onchange="handleBulkFile(event)">
+        </label>
+      </div>
+      <textarea id="bulkCsv" rows="6" placeholder="field,value,action&#10;LAND1,CH,add&#10;ZTERM,NT45,add" oninput="uiState.bulkCsvText=this.value">${esc(uiState.bulkCsvText)}</textarea>
+      <button class="btn btn-primary" style="margin-top:10px;" onclick="processBulkUpload()">Process Upload</button>
+      ${bulkResultsTable}
+    </div>
+  </div>`;
+}
+
+function viewCrossRules(){
+  const rows = DB.crossRules.map(r=>`
+    <tr>
+      <td><span class="badge badge-info">${esc(r.type)}</span></td>
+      <td>${esc(r.objectA)}.${esc(r.fieldA)}</td>
+      <td>&rarr;</td>
+      <td>${esc(r.objectB)}.${esc(r.fieldB)}</td>
+      <td><span class="badge ${r.severity==='ERROR'?'badge-error':'badge-warning'}">${r.severity}</span></td>
+      <td class="small">${esc(r.description)}</td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${r.enabled?"checked":""} onchange="toggleCrossRule(${r.id})">
+          <span class="track"></span>
+        </label>
+      </td>
+    </tr>`).join("");
+
+  const f = uiState.crossRuleForm;
+  const objOptions = Object.keys(DB.objectLabels).map(o=>`<option value="${o}" ${f.objectA===o?"selected":""}>${DB.objectLabels[o]}</option>`).join("");
+  const objOptionsB = Object.keys(DB.objectLabels).map(o=>`<option value="${o}" ${f.objectB===o?"selected":""}>${DB.objectLabels[o]}</option>`).join("");
+
+  return `
+  <div class="page">
+    <h2>Cross-Object Rules</h2>
+    <p class="muted" style="margin-bottom:20px;">Referential integrity and cross-object consistency rules feed the Referential Integrity dimension of the Data Quality dashboard.</p>
+    <div class="card">
+      <table>
+        <thead><tr><th>Type</th><th>From</th><th></th><th>To</th><th>Severity</th><th>Description</th><th>Enabled</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Add Rule</h3>
+      <p class="tiny muted" style="margin-bottom:10px;">In this prototype, live scoring is wired up for the seeded Open Items &rarr; Vendor Master rule; additional rules are recorded here for review.</p>
+      <div class="grid-2">
+        <div class="field"><label>Object A</label><select onchange="uiState.crossRuleForm.objectA=this.value">${objOptions}</select></div>
+        <div class="field"><label>Field A</label><input type="text" value="${esc(f.fieldA)}" oninput="uiState.crossRuleForm.fieldA=this.value" placeholder="e.g. LIFNR"></div>
+        <div class="field"><label>Object B</label><select onchange="uiState.crossRuleForm.objectB=this.value">${objOptionsB}</select></div>
+        <div class="field"><label>Field B</label><input type="text" value="${esc(f.fieldB)}" oninput="uiState.crossRuleForm.fieldB=this.value" placeholder="e.g. LIFNR"></div>
+        <div class="field"><label>Type</label>
+          <select onchange="uiState.crossRuleForm.type=this.value">
+            <option value="must_exist_in" ${f.type==='must_exist_in'?'selected':''}>must_exist_in</option>
+            <option value="consistent_value" ${f.type==='consistent_value'?'selected':''}>consistent_value</option>
+          </select>
+        </div>
+        <div class="field"><label>Severity</label>
+          <select onchange="uiState.crossRuleForm.severity=this.value">
+            <option value="ERROR" ${f.severity==='ERROR'?'selected':''}>ERROR</option>
+            <option value="WARNING" ${f.severity==='WARNING'?'selected':''}>WARNING</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Description</label><input type="text" value="${esc(f.description)}" oninput="uiState.crossRuleForm.description=this.value" placeholder="Describe the business rule..."></div>
+      <button class="btn btn-primary" onclick="addCrossRule()">Add Rule</button>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   RENDER LOOP
+   ========================================================================= */
+function render(){
+  const app = document.getElementById("app");
+  if(!session){ app.innerHTML = viewLogin(); return; }
+  let body = "";
+  if(route.page === "projects") body = viewProjects();
+  else if(route.page === "workspace") body = viewWorkspace();
+  else if(route.page === "rules") body = viewRules();
+  else if(route.page === "crossrules") body = viewCrossRules();
+  app.innerHTML = topNav() + body;
+}
+
+render();
+</script>
+</body>
+</html>
